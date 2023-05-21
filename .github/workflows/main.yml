@@ -18,9 +18,9 @@ jobs:
         run: Expand-Archive ngrok.zip
 
       - name: Auth
-        run: .\ngrok\ngrok.exe authtoken ${{ secrets.2LLJ22kz4Gsl9waOiBUJMASmeWb_7XQ29gQCYj1H9VQMaD6q4 }}
+        run: .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
         env:
-          NGROK_AUTH_TOKEN: ${{ secrets.2LLJ22kz4Gsl9waOiBUJMASmeWb_7XQ29gQCYj1H9VQMaD6q4 }}
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
 
       - name: Enable TS
         run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
@@ -32,7 +32,7 @@ jobs:
       - run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
       - name: Start ngrok in the background
-        run: Start-Process -FilePath ".\ngrok\ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
+        run: Start-Process -FilePath ".\ngrok\ngrok.exe" -ArgumentList "tcp 3389"
 
       - name: Wait for ngrok to start
         run: Start-Sleep -Seconds 5
@@ -60,10 +60,11 @@ jobs:
           $ngrokUrl = ($ngrokApi | ConvertFrom-Json).tunnels[0].public_url
           Write-Host "Ngrok URL: $ngrokUrl"
 
-      - name: Wait before restarting ngrok
-        run: Start-Sleep -Seconds 21600  # 6 hours
+      - name: Wait before cleanup
+        run: Start-Sleep -Seconds 21600
 
-      - name: Restart ngrok
+      - name: Cleanup
+        if: always()
         run: |
           $ngrokProcess = Get-Process -Name "ngrok" -ErrorAction SilentlyContinue
           if ($null -ne $ngrokProcess) {
